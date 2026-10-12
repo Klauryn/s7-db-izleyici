@@ -1,17 +1,22 @@
+using System.Globalization;
+using System.Text.Json.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace DbIzleyici;
 
 public enum VarType { Bool, Byte, Int, Word, DInt, Real }
 
-public class PlcVariable
+// Serbest değişken: DB, bayt ofseti (ve Bool için bit). Değer yalnız okunur, kaydedilmez.
+public partial class PlcVariable : ObservableObject
 {
-    public string Name { get; set; } = "";
-    public VarType Type { get; set; } = VarType.Int;
-    public int Db { get; set; } = 1;
-    public int Offset { get; set; }
-    public int Bit { get; set; }
-
-    [System.Text.Json.Serialization.JsonIgnore]
-    public string Value { get; set; } = "";
+    [ObservableProperty] private string _name = "";
+    [ObservableProperty] private VarType _type = VarType.Int;
+    [ObservableProperty] private int _db = 1;
+    [ObservableProperty] private int _offset;
+    [ObservableProperty] private int _bit;
+    [ObservableProperty]
+    [property: JsonIgnore]
+    private string _value = "";
 
     public int Size => Type switch
     {
@@ -31,9 +36,9 @@ public class PlcVariable
             VarType.Byte => buf[i].ToString(),
             VarType.Word => ((ushort)(buf[i] << 8 | buf[i + 1])).ToString(),
             VarType.Int => ((short)(buf[i] << 8 | buf[i + 1])).ToString(),
-            VarType.DInt => ((int)(buf[i] << 24 | buf[i + 1] << 16 | buf[i + 2] << 8 | buf[i + 3])).ToString(),
+            VarType.DInt => (buf[i] << 24 | buf[i + 1] << 16 | buf[i + 2] << 8 | buf[i + 3]).ToString(),
             VarType.Real => BitConverter.Int32BitsToSingle(buf[i] << 24 | buf[i + 1] << 16 | buf[i + 2] << 8 | buf[i + 3])
-                                .ToString("0.###", System.Globalization.CultureInfo.InvariantCulture),
+                                .ToString("0.###", CultureInfo.InvariantCulture),
             _ => "?"
         };
     }
@@ -41,7 +46,7 @@ public class PlcVariable
     // Yazılacak değeri bayt dizisine çevir (Bool için kullanılmaz, bit yazılır).
     public byte[] Encode(string text)
     {
-        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        var inv = CultureInfo.InvariantCulture;
         text = text.Trim().Replace(',', '.');
         switch (Type)
         {
