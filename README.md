@@ -2,7 +2,26 @@
 
 Siemens S7-1200/1500 PLC'lerdeki veri bloklarını (DB) izleyen ve yazabilen küçük bir **.NET 8 WinForms** aracı. PLC iletişimi için [S7.Net+](https://github.com/S7NetPlus/s7netplus) kullanır.
 
-> **Durum:** Derleniyor, ancak henüz gerçek bir PLC üzerinde sistematik olarak test edilmedi. Üretim makinelerinde kullanmadan önce kendi test ortamında dene.
+> **Durum:** S7-1500 (1516T-3 PN/DP) üzerinde **okuma** doğrulandı: Bool (From/To), Real dizisi ve String dizisi. Yazma, yeniden bağlanma ve süre ölçümü henüz gerçek PLC'de denenmedi. Üretim makinelerinde kullanmadan önce kendi test ortamında dene.
+
+## Ekran görüntüleri
+
+**Bool (16×16):** From solda (yalnız okuma), To sağda (tıkla: ters çevirir ve yazar).
+
+![Bool izgara](docs/bool-izgara.png)
+
+**Sayı (Real):** From okunur, To düzenlenip Enter ile yazılır.
+
+![Sayı tablosu](docs/sayi-tablo.png)
+
+**String:** `String[N]`, N = 254. Boş satırlar boş metin.
+
+![String tablosu](docs/string-tablo.png)
+
+**Dizi ekleme ve serbest değişkenler:**
+
+![Dizi ekle](docs/dizi-ekle.png)
+![Değişkenler](docs/degiskenler.png)
 
 ## Özellikler
 - Bağlantı: IP, CPU tipi, rack/slot; kopmada 0,5 sn'den 5 sn'ye çıkan beklemeyle otomatik yeniden bağlanma.
