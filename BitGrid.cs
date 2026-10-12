@@ -30,21 +30,25 @@ public class BitGrid : Control
     protected override void OnPaint(PaintEventArgs e)
     {
         var g = e.Graphics;
-        g.Clear(SystemColors.Control);
+        g.Clear(Theme.Bg);
         int w = Width / 16, h = Height / 16;
-        using var font = new Font(Font.FontFamily, Math.Max(6f, Math.Min(w, h) / 3.2f));
-        using var on = new SolidBrush(Color.SeaGreen);
-        using var off = new SolidBrush(Color.WhiteSmoke);
-        using var unk = new SolidBrush(Color.Gainsboro);
-        using var pen = new Pen(Color.Silver);
+        using var font = new Font(Theme.UiFont.FontFamily, Math.Max(6f, Math.Min(w, h) / 3.4f));
+        using var on = new SolidBrush(Theme.Accent);
+        using var off = new SolidBrush(Theme.Surface);
+        using var unk = new SolidBrush(Theme.Surface2);
+        using var txtOn = new SolidBrush(Color.FromArgb(12, 30, 22));
+        using var txtOff = new SolidBrush(Theme.TextMuted);
+        using var pen = new Pen(Theme.Bg, 2);
+        using var hover = new Pen(Theme.Warn, 2);
         var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
         for (int i = 0; i < Count; i++)
         {
             var rc = Cell(i, w, h);
-            g.FillRectangle(!Known ? unk : Values[i] ? on : off, rc);
+            bool isOn = Known && Values[i];
+            g.FillRectangle(!Known ? unk : isOn ? on : off, rc);
             g.DrawRectangle(pen, rc);
-            g.DrawString(i.ToString(), font, Known && Values[i] ? Brushes.White : Brushes.Gray, rc, fmt);
-            if (Interactive && i == _hover) g.DrawRectangle(Pens.DarkOrange, rc.X + 1, rc.Y + 1, rc.Width - 2, rc.Height - 2);
+            g.DrawString(i.ToString(), font, isOn ? txtOn : txtOff, rc, fmt);
+            if (Interactive && i == _hover) g.DrawRectangle(hover, rc.X + 1, rc.Y + 1, rc.Width - 3, rc.Height - 3);
         }
     }
 

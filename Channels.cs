@@ -67,7 +67,7 @@ public abstract class ArrayChannel : Panel
         catch (Exception ex) when (plc.IsConnected)
         {
             StatusLabel.Text = "Hata: " + ex.Message;
-            StatusLabel.ForeColor = Color.Firebrick;
+            StatusLabel.ForeColor = Theme.Bad;
             if (ex.Message != _lastError) { _lastError = ex.Message; Log($"{Name}: {ex.Message}"); }
         }
     }

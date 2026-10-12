@@ -17,7 +17,7 @@ public class MainForm : Form
     readonly NumericUpDown _slot = new() { Width = 45, Maximum = 31, Value = 1 };
     readonly NumericUpDown _interval = new() { Width = 70, Minimum = 20, Maximum = 5000, Value = 200, Increment = 50 };
     readonly Button _connect = new() { Text = "Bağlan", AutoSize = true };
-    readonly Label _status = new() { AutoSize = true, Text = "Bağlı değil", ForeColor = Color.Firebrick };
+    readonly Label _status = new() { AutoSize = true, Text = "● Bağlı değil", ForeColor = Theme.Bad };
     readonly DataGridView _grid = new() { Dock = DockStyle.Fill, AutoGenerateColumns = false, AllowUserToAddRows = true };
     readonly TextBox _writeValue = new() { Width = 100 };
     readonly Button _write = new() { Text = "Seçiliye yaz", AutoSize = true };
@@ -43,7 +43,8 @@ public class MainForm : Form
     public MainForm()
     {
         Text = "DB İzleyici (S7.Net+)";
-        Width = 900; Height = 650;
+        Width = 960; Height = 760;
+        MinimumSize = new Size(900, 640);
 
         _cpu.Items.AddRange(new object[] { "S71200", "S71500", "S7300", "S7400" });
         _cpu.SelectedIndex = 1;
@@ -58,7 +59,11 @@ public class MainForm : Form
         var bottom = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true, Padding = new Padding(6) };
         bottom.Controls.AddRange(new Control[] { L("Değer"), _writeValue, _write, _addArray, _bench, _allowWrite, _stats });
 
-        var logBox = new Panel { Dock = DockStyle.Bottom, Height = 140 };
+        var logBox = new Panel { Dock = DockStyle.Bottom, Height = 140, Padding = new Padding(10, 0, 10, 10) };
+        _log.Font = Theme.MonoFont;
+        _log.BorderStyle = BorderStyle.None;
+        _log.BackColor = Theme.Surface;
+        _log.ForeColor = Theme.TextMuted;
         logBox.Controls.Add(_log);
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ad", DataPropertyName = nameof(PlcVariable.Name), Width = 160 });
@@ -93,6 +98,13 @@ public class MainForm : Form
         Controls.Add(logBox);
         Controls.Add(top);
 
+        Theme.Apply(this);
+        // Bağlan düğmesi vurgulu (mint), diğer eylemler nötr
+        _connect.BackColor = Theme.AccentDim;
+        _connect.ForeColor = Color.White;
+        _connect.FlatAppearance.BorderColor = Theme.Accent;
+        _status.Padding = new Padding(10, 0, 0, 0);
+
         LoadVars();
         _connect.Click += async (_, _) => await ToggleConnectAsync();
         _write.Click += async (_, _) => await WriteSelectedAsync();
@@ -102,6 +114,17 @@ public class MainForm : Form
     }
 
     static Label L(string t) => new() { Text = t, AutoSize = true, Margin = new Padding(8, 7, 0, 0) };
+
+    // Windows 10/11: başlık çubuğunu koyu temaya uydur (desteklemeyen sürümde sessizce atlanır).
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        int dark = 1;
+        try { DwmSetWindowAttribute(Handle, 20, ref dark, sizeof(int)); } catch { }
+    }
 
     void Log(string msg)
     {
@@ -121,7 +144,7 @@ public class MainForm : Form
     void SetStatus(string text, Color c)
     {
         if (InvokeRequired) { BeginInvoke(() => SetStatus(text, c)); return; }
-        _status.Text = text; _status.ForeColor = c;
+        _status.Text = "● " + text; _status.ForeColor = c;
     }
 
     // Aynı DB'deki değişkenleri tek aralıkta okumak için grupla.
@@ -144,7 +167,7 @@ public class MainForm : Form
             _cts.Cancel(); _cts = null;
             await _plc.DisconnectAsync();
             _connect.Text = "Bağlan";
-            SetStatus("Bağlı değil", Color.Firebrick);
+            SetStatus("Bağlı değil", Theme.Bad);
             return;
         }
         _cts = new CancellationTokenSource();
@@ -165,11 +188,11 @@ public class MainForm : Form
             {
                 if (!_plc.IsConnected)
                 {
-                    SetStatus("Bağlanıyor...", Color.DarkOrange);
+                    SetStatus("Bağlanıyor...", Theme.Warn);
                     using var tcts = CancellationTokenSource.CreateLinkedTokenSource(ct);
                     tcts.CancelAfter(3000);
                     await _plc.ConnectAsync(SelectedCpu(), _ip.Text.Trim(), (short)_rack.Value, (short)_slot.Value, tcts.Token);
-                    SetStatus("Bağlı", Color.SeaGreen);
+                    SetStatus("Bağlı", Theme.Accent);
                     Log("Bağlandı.");
                     backoff = 500;
                 }
@@ -207,7 +230,7 @@ public class MainForm : Form
             {
                 _errors++;
                 _reconnects++;
-                SetStatus("Bağlantı sorunu", Color.Firebrick);
+                SetStatus("Bağlantı sorunu", Theme.Bad);
                 Log($"Hata: {ex.Message} (yeniden denenecek: {backoff} ms)");
                 try { await _plc.DisconnectAsync(); } catch { }
                 try { await Task.Delay(backoff, ct); } catch (OperationCanceledException) { break; }
