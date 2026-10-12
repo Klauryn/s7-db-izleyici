@@ -1,6 +1,6 @@
 # S7 DB İzleyici
 
-Siemens S7-1200/1500 PLC'lerdeki veri bloklarını (DB) izleyen ve yazabilen küçük bir **.NET 8 WinForms** aracı. PLC iletişimi için [S7.Net+](https://github.com/S7NetPlus/s7netplus) kullanır.
+Siemens S7-1200/1500 PLC'lerdeki veri bloklarını (DB) izleyen ve yazabilen küçük bir **.NET 8 WPF** (MVVM) aracı. PLC iletişimi için [S7.Net+](https://github.com/S7NetPlus/s7netplus) kullanır.
 
 > **Durum:** S7-1500 (1516T-3 PN/DP) üzerinde **okuma** doğrulandı: Bool (From/To), Real dizisi ve String dizisi. Yazma, yeniden bağlanma ve süre ölçümü henüz gerçek PLC'de denenmedi. Üretim makinelerinde kullanmadan önce kendi test ortamında dene.
 
