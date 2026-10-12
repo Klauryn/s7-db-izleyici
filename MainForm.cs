@@ -109,6 +109,15 @@ public class MainForm : Form
         _log.AppendText($"{DateTime.Now:HH:mm:ss.fff}  {msg}{Environment.NewLine}");
     }
 
+    // Aynı hata her turda log'u doldurmasın diye yalnız değiştiğinde yaz.
+    string _lastLogged = "";
+    void LogOnce(string msg)
+    {
+        if (msg == _lastLogged) return;
+        _lastLogged = msg;
+        Log(msg);
+    }
+
     void SetStatus(string text, Color c)
     {
         if (InvokeRequired) { BeginInvoke(() => SetStatus(text, c)); return; }
@@ -168,8 +177,18 @@ public class MainForm : Form
                 sw.Restart();
                 foreach (var g in Plan())
                 {
-                    var buf = await _plc.ReadRangeAsync(g.Db, g.Start, g.Count, ct);
-                    foreach (var v in g.Vars) v.Value = v.Decode(buf, g.Start);
+                    // Veri hatası (ör. DB yok) yalnız bu grubu etkiler; bağlantıyı kesmez.
+                    try
+                    {
+                        var buf = await _plc.ReadRangeAsync(g.Db, g.Start, g.Count, ct);
+                        foreach (var v in g.Vars) v.Value = v.Decode(buf, g.Start);
+                    }
+                    catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+                    catch (Exception ex) when (_plc.IsConnected)
+                    {
+                        foreach (var v in g.Vars) v.Value = "Hata";
+                        LogOnce($"DB{g.Db}: {ex.Message}");
+                    }
                 }
                 foreach (var ch in _channels)
                     if (ch.ReadEnabled) await ch.PollAsync(_plc, ct);
@@ -272,8 +291,6 @@ public class MainForm : Form
                 foreach (var v in JsonSerializer.Deserialize<List<PlcVariable>>(File.ReadAllText(_varsFile)) ?? new()) _vars.Add(v);
         }
         catch { /* bozuk dosya: boş başla */ }
-        if (_vars.Count == 0)
-            _vars.Add(new PlcVariable { Name = "Ornek_Int", Type = VarType.Int, Db = 1, Offset = 0 });
     }
 
     void SaveVars()
